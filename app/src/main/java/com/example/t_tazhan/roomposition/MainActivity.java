@@ -1,7 +1,5 @@
 package com.example.t_tazhan.roomposition;
 
-import android.os.CountDownTimer;
-import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,23 +13,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Message;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+
+import static com.example.t_tazhan.roomposition.Constant.*;
+import static com.example.t_tazhan.roomposition.FileSave.saveFile;
+import static java.lang.Thread.sleep;
+
 
 public class MainActivity extends AppCompatActivity {
+
+    public Thread thread;
+    public Handler handler;
 
     //声明变量
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -40,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     Button btrssi1;
     Button btrssi2;
     Button Btrssi3;
+    EditText textX;
+    EditText textY;
     ProgressBar progressBar;
     ListView b_listView;
     ArrayAdapter<String> adt_Devices;
@@ -49,13 +56,16 @@ public class MainActivity extends AppCompatActivity {
     BluetoothGatt mBluetoothGatt1;
     BluetoothGatt mBluetoothGatt2;
     RSSI rssiThread;
-    //广播接收器
-    //点击次数控制
-    public int valueClick = 300;
 
+    StringBuilder sb = new StringBuilder();
+    String X = null,Y = null;
+    int l = 0;
+    //广播接收器
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
-        synchronized public void onReceive(Context context, Intent intent) {
+        public  void onReceive(Context context, Intent intent) {
+            System.out.println("第" + (++l) + "次进入onReceive的时间是" + System.currentTimeMillis());
+            lst_Devices.clear();
             // TODO Auto-generated method stub
             String action = intent.getAction();
             // 显示所有收到的消息及其细节
@@ -65,35 +75,51 @@ public class MainActivity extends AppCompatActivity {
                 bluetooth_Device = intent
                         .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (bluetooth_Device.getBondState() == BluetoothDevice.BOND_NONE) {
-                    String str ="设备|"+bluetooth_Device.getName() + "|"
-                            + bluetooth_Device.getAddress() + "|" + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI);
-                    if (lst_Devices.indexOf(str) == -1) {// 防止地址被重复添加
-                        lst_Devices.add(str); // 获取设备名称和mac地址
-                        saveFile1(str);
-                    }
-                    adt_Devices.notifyDataSetChanged();
-                } else if(bluetooth_Device.getBondState() == BluetoothDevice.BOND_BONDED) {
-                    String str ="已配对|"+bluetooth_Device.getName() + "|"
-                            + bluetooth_Device.getAddress() + "|"
+                    String str ="信标"
+//                            + bluetooth_Device.getName() + "|"
+                            + getBeacon(bluetooth_Device.getAddress()) + " "
                             + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI);
                     if (lst_Devices.indexOf(str) == -1) {// 防止地址被重复添加
                         lst_Devices.add(str); // 获取设备名称和mac地址
-                        saveFile1(str);
+                        System.out.println("第" + l + "次进入add String");
+//                        saveFile(str);
+                    }
+                    adt_Devices.notifyDataSetChanged();
+                } else if(bluetooth_Device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                    String str ="信标"
+//                            + bluetooth_Device.getName() + "|"
+                            + getBeacon(bluetooth_Device.getAddress()) + " "
+                            + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI);
+                    if (lst_Devices.indexOf(str) == -1) {// 防止地址被重复添加
+                        lst_Devices.add(str); // 获取设备名称和mac地址
+                        System.out.println("第" + l + "次进入add String");
+//                        saveFile(str);
                     }
                     adt_Devices.notifyDataSetChanged();
                 }
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                sb.append("分界线");
             }
+
             //此行代码表示取消继续搜索蓝牙信号
 //            bluetoothAdapter.cancelDiscovery();
             progressBar.setVisibility(View.INVISIBLE);
+
+//            sb.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
+            for (int j=0;j<lst_Devices.size();j++) {
+                sb.append(lst_Devices.get(j)).append("\r");
+                System.out.println(j+ " "+lst_Devices.get(j));
+            }
+            saveFile(sb.toString(),X,Y);
         }
+
     };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //利用Intent请求获得蓝牙权限
+        handler = new Handler();
         if (!bluetoothAdapter.isEnabled()) {
             int REQUEST_ENABLE_BT = 1;
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -102,7 +128,12 @@ public class MainActivity extends AppCompatActivity {
             Toast toast = Toast.makeText(MainActivity.this, "已经打开了蓝牙，可以正常使用APP", Toast.LENGTH_LONG);
             toast.show();
         }
-        //找到对象对应控件
+
+        textX = (EditText)findViewById(R.id.x);
+        textX.addTextChangedListener(textWatcher1);
+        textY = (EditText)findViewById(R.id.y);
+        textY.addTextChangedListener(textWatcher2);
+
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         bt1 = (Button) findViewById(R.id.button);
         Btrssi3= (Button) findViewById(R.id.RssiThread);
@@ -113,34 +144,14 @@ public class MainActivity extends AppCompatActivity {
                 android.R.layout.simple_list_item_1, lst_Devices);
         b_listView.setAdapter(adt_Devices);
         b_listView.setOnItemClickListener(new ItemClickEvent());
-        // 注册Receiver来获取蓝牙设备相关的结果
+
         IntentFilter intent = new IntentFilter();
-        intent.addAction(BluetoothDevice.ACTION_FOUND);// 用BroadcastReceiver来取得搜索结果
+        intent.addAction(BluetoothDevice.ACTION_FOUND);
         intent.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         intent.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
         intent.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(mReceiver, intent);
         num=new int[3000];
-
-//        bt1.setOnClickListener(new View.OnClickListener() {
-//            public void onClick(final View v) {
-//                new Thread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        if (valueClick >1) {
-//                            try {
-//                                Thread.sleep(500);
-//                            } catch (InterruptedException e) {
-//                                e.printStackTrace();
-//                            } finally {
-//                                    onClick(v);
-//                            }
-//                            valueClick = valueClick-1;
-//                        }
-//                    }
-//                }).start();
-//            }
-//        });
 
         //添加两个按钮的单击事件
         btrssi1.setOnClickListener(new Button.OnClickListener() {
@@ -197,15 +208,6 @@ public class MainActivity extends AppCompatActivity {
                 rssiThread.rssiHandler.sendMessage(msg);
             }
         });
-//        for (int i=0;i<300;i++) {
-//            View v = null;
-//            onClick_Search(v);
-//            try {
-//                Thread.sleep(3000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
     }
     //检查蓝牙是否打开
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -228,14 +230,44 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClick_Search(View v) {
-        // 如果正在搜索，就先取消搜索
-        if (bluetoothAdapter.isDiscovering()) {
-            bluetoothAdapter.cancelDiscovery();
-            progressBar.setVisibility(View.INVISIBLE);
-        } else {
-            // 开始搜索蓝牙设备,搜索到的蓝牙设备通过广播返回
-            progressBar.setVisibility(View.VISIBLE);
-            bluetoothAdapter.startDiscovery();
+        sb.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
+        l = 0;
+//        new Thread() {
+//            public void run() {
+//                handler.post(runnable);
+//            }
+//        }.start();
+        for (int i=0;i<500;i++) {
+            System.out.println("搜索" + i);
+            try {
+//                if (bluetoothAdapter.isDiscovering()) {
+//                    bluetoothAdapter.cancelDiscovery();
+//                    progressBar.setVisibility(View.INVISIBLE);
+//                    bluetoothAdapter.startDiscovery();
+//                    progressBar.setVisibility(View.VISIBLE);
+//                    Thread.sleep(500);
+//                    bluetoothAdapter.cancelDiscovery();
+//                    return;
+//                } else {
+//                    bluetoothAdapter.startDiscovery();
+//                    progressBar.setVisibility(View.VISIBLE);
+//                    Thread.sleep(500);
+//                    bluetoothAdapter.cancelDiscovery();
+//                    progressBar.setVisibility(View.INVISIBLE);
+//                    return;
+//                }
+                if (bluetoothAdapter.isDiscovering()) {
+                    bluetoothAdapter.cancelDiscovery();
+                    progressBar.setVisibility(View.INVISIBLE);
+                } else {
+                    progressBar.setVisibility(View.VISIBLE);
+                    bluetoothAdapter.startDiscovery();
+                }
+                Thread.currentThread().sleep(500);
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -258,13 +290,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //实现gattCallback
-    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback()
-    {
+    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
-        public void onConnectionStateChange(BluetoothGatt mBluetoothGatt, int status, int newState)
-        {
+        public void onConnectionStateChange(BluetoothGatt mBluetoothGatt, int status, int newState) {
             //设备连接状态改变会回调这个函数
             Log.v(TAG, "回调函数已经调用");
+            System.out.print("回调函数已经调用");
             super.onConnectionStateChange(mBluetoothGatt, status, newState);
             if (newState == BluetoothProfile.STATE_CONNECTED)
             {
@@ -286,32 +317,95 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private static final String ROOM_POSITION = "/room_position/";
-    public static void saveFile1(String str) {
-        String filePath;
-        boolean hasSDCard = Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
-        if (hasSDCard) {
-            filePath = Environment.getExternalStorageDirectory().toString() + ROOM_POSITION + File.separator + "test.txt";
-        } else  // 系统下载缓存根目录的hello.text
-            filePath = Environment.getDownloadCacheDirectory().toString() + ROOM_POSITION + File.separator + "test.txt";
-
-        try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                File dir = new File(file.getParent());
-                dir.mkdirs();
-                file.createNewFile();
-            }
-            FileOutputStream outStream = new FileOutputStream(file);
-            outStream.write(str.getBytes());
-            outStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+    private TextWatcher textWatcher1 = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
         }
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+            X = textX.getText().toString();
+            System.out.println(textX.getText().toString());
+
+        }
+    };
+    private TextWatcher textWatcher2 = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable editable) {
+            Y = textY.getText().toString();
+            System.out.println(textY.getText().toString());
+
+        }
+    };
+    private static String getBeacon(String beacon) {
+        String value = beacon;
+        switch (beacon) {
+            case A :
+                value = "A";
+                break;
+            case B :
+                value = "B";
+                break;
+            case C :
+                value = "C";
+                break;
+            case D :
+                value = "D";
+                break;
+            case E :
+                value = "E";
+                break;
+            case F :
+                value = "F";
+                break;
+            case G :
+                value = "G";
+                break;
+            case H :
+                value = "H";
+                break;
+        }
+        return value;
     }
 
-    public void info() {
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            final int scanRepeatValue = 500;
+            final int scanTimeValue = 5;
 
-    }
+            for (int i = 0; i < scanRepeatValue; i++) {
+                System.out.println("搜索" + i);
+                progressBar.setVisibility(View.VISIBLE);
+                bluetoothAdapter.startDiscovery();
+                for (int j = 0; j < scanTimeValue; j++) {
+                    try {
+                        sleep(100L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                bluetoothAdapter.cancelDiscovery();
+                progressBar.setVisibility(View.INVISIBLE);
+                break;
+            }
+        }
+    };
+
 }
