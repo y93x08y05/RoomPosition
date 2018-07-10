@@ -36,13 +36,13 @@ import static com.example.t_tazhan.roomposition.FileSave.saveFile;
 import static java.lang.Thread.sleep;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity2 extends AppCompatActivity {
 
     public Thread thread;
     public Handler handler;
 
     //声明变量
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String TAG = MainActivity2.class.getSimpleName();
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     Button bt1;
     Button btrssi1;
@@ -67,12 +67,12 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public  void onReceive(Context context, Intent intent) {
-            System.out.println("第" + (l) + "次进入onReceive的时间是" + System.currentTimeMillis());
-
+            System.out.println("第" + (++l) + "次进入onReceive的时间是" + System.currentTimeMillis());
+            lst_Devices.clear();
             // TODO Auto-generated method stub
             String action = intent.getAction();
             // 显示所有收到的消息及其细节
-            BluetoothDevice bluetooth_Device;
+            BluetoothDevice bluetooth_Device ;
             // 搜索设备时，取得设备的MAC地址
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 bluetooth_Device = intent
@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
                 sb.append(lst_Devices.get(j)).append("\r");
                 System.out.println(j+ " "+lst_Devices.get(j));
             }
-            //saveFile(sb.toString(),X,Y);
+            saveFile(sb.toString(),X,Y);
         }
 
     };
@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         } else {
-            Toast toast = Toast.makeText(MainActivity.this, "已经打开了蓝牙，可以正常使用APP", Toast.LENGTH_LONG);
+            Toast toast = Toast.makeText(MainActivity2.this, "已经打开了蓝牙，可以正常使用APP", Toast.LENGTH_LONG);
             toast.show();
         }
 
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
                 for(mark=0;mark<3000;mark++){
                     Log.v(TAG,""+num[mark]+" "+mark);
                 }
-                Toast.makeText(MainActivity.this,"读取完毕",Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity2.this,"读取完毕",Toast.LENGTH_SHORT).show();
             }
         });
         btrssi2.setOnClickListener(new Button.OnClickListener() {
@@ -194,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
                 for(mark=0;mark<3000;mark++){
                     Log.v(TAG,""+num[mark]+" "+mark);
                 }
-                Toast.makeText(MainActivity.this,"读取完毕",Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity2.this,"读取完毕",Toast.LENGTH_SHORT).show();
             }
         });
         //该单击时间创建了新的线程并且启动了，发送了一个消息给新线程
@@ -215,10 +215,10 @@ public class MainActivity extends AppCompatActivity {
     //检查蓝牙是否打开
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            Toast toast = Toast.makeText(MainActivity.this, "已经打开了蓝牙，可以正常使用APP", Toast.LENGTH_LONG);
+            Toast toast = Toast.makeText(MainActivity2.this, "已经打开了蓝牙，可以正常使用APP", Toast.LENGTH_LONG);
             toast.show();
         } else {
-            Toast toast1 = Toast.makeText(MainActivity.this, "还没打开蓝牙，不能使用APP", Toast.LENGTH_LONG);
+            Toast toast1 = Toast.makeText(MainActivity2.this, "还没打开蓝牙，不能使用APP", Toast.LENGTH_LONG);
             toast1.show();
         }
     }
@@ -232,17 +232,46 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(mReceiver);
     }
 
-
-
-
     public void onClick_Search(View v) {
         sb.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
-        l = 1;
+        l = 0;
 //        new Thread() {
 //            public void run() {
 //                handler.post(runnable);
 //            }
 //        }.start();
+//        for (int i=0;i<500;i++) {
+//            System.out.println("搜索" + i);
+//            try {
+//                if (bluetoothAdapter.isDiscovering()) {
+//                    bluetoothAdapter.cancelDiscovery();
+//                    progressBar.setVisibility(View.INVISIBLE);
+//                    bluetoothAdapter.startDiscovery();
+//                    progressBar.setVisibility(View.VISIBLE);
+//                    Thread.sleep(500);
+//                    bluetoothAdapter.cancelDiscovery();
+//                    return;
+//                } else {
+//                    bluetoothAdapter.startDiscovery();
+//                    progressBar.setVisibility(View.VISIBLE);
+//                    Thread.sleep(500);
+//                    bluetoothAdapter.cancelDiscovery();
+//                    progressBar.setVisibility(View.INVISIBLE);
+//                    return;
+//                }
+//                if (bluetoothAdapter.isDiscovering()) {
+//                    bluetoothAdapter.cancelDiscovery();
+//                    progressBar.setVisibility(View.INVISIBLE);
+//                } else {
+//                    progressBar.setVisibility(View.VISIBLE);
+//                    bluetoothAdapter.startDiscovery();
+//                }
+//                Thread.sleep(500);
+//                CaptureRssi( );
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }
         startTimer();
     }
 
@@ -257,8 +286,8 @@ public class MainActivity extends AppCompatActivity {
             String address = values[2];
             BluetoothDevice btDev = bluetoothAdapter.getRemoteDevice(address);
             if(arg2==0){
-                mBluetoothGatt1 = btDev.connectGatt(MainActivity.this, false, gattCallback);}
-            else { mBluetoothGatt2 = btDev.connectGatt(MainActivity.this, false, gattCallback);}
+                mBluetoothGatt1 = btDev.connectGatt(MainActivity2.this, false, gattCallback);}
+            else { mBluetoothGatt2 = btDev.connectGatt(MainActivity2.this, false, gattCallback);}
             rssiThread=new RSSI(mBluetoothGatt1);
             rssiThread.start();
         }
@@ -275,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
             if (newState == BluetoothProfile.STATE_CONNECTED)
             {
                 //连接成功, 可以把这个gatt 保存起来, 需要读rssi的时候就
-                Toast.makeText(MainActivity.this, "已经连接", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity2.this, "已经连接", Toast.LENGTH_LONG).show();
                 Log.v(TAG, "回调函数已经调用");
             }
         }
@@ -291,47 +320,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
-    Timer timer;
-    TimerTask timerTask;
-
-    public void startTimer() {
-
-        //set a new Timer
-        timer = new Timer();
-
-        //initialize the TimerTask's job
-        initializeTimerTask();
-
-        //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
-
-        timer.schedule(timerTask, 0, 5000); //
-
-    }
-
-    public void initializeTimerTask() {
-
-        timerTask = new TimerTask() {
-            public void run() {
-                l++;
-                StringBuilder sb = new StringBuilder();
-                for(int i=0; i< lst_Devices.size();i++) {
-                    sb = sb.append(lst_Devices.get(i)).append(" ");
-                }
-
-                saveFile(sb.toString(),X,Y);
-
-                lst_Devices.clear();
-                //use a handler to run a toast that shows the current timestamp
-
-                if (bluetoothAdapter.isDiscovering()) {
-                    bluetoothAdapter.cancelDiscovery();
-                }
-                progressBar.setVisibility(View.VISIBLE);
-                bluetoothAdapter.startDiscovery();
-            };
-        };
-    }
 
     private TextWatcher textWatcher1 = new TextWatcher() {
         @Override
@@ -369,36 +357,6 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
-    private static String getBeacon(String beacon) {
-        String value = beacon;
-        switch (beacon) {
-            case A :
-                value = "A";
-                break;
-            case B :
-                value = "B";
-                break;
-            case C :
-                value = "C";
-                break;
-            case D :
-                value = "D";
-                break;
-            case E :
-                value = "E";
-                break;
-            case F :
-                value = "F";
-                break;
-            case G :
-                value = "G";
-                break;
-            case H :
-                value = "H";
-                break;
-        }
-        return value;
-    }
 
     private Runnable runnable = new Runnable() {
         @Override
@@ -419,9 +377,74 @@ public class MainActivity extends AppCompatActivity {
                 }
                 bluetoothAdapter.cancelDiscovery();
                 progressBar.setVisibility(View.INVISIBLE);
+//                CaptureRssi();
                 break;
             }
         }
     };
+
+
+    public  void CaptureRssi( ) {
+     Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+
+        if(pairedDevices.size() > 0) {
+        // There are paired devices. Get the name and address of each paired device.
+            for(BluetoothDevice device : pairedDevices) {
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress();// MAC address
+//                short RSSI = intent.getExtras().getShort(device.EXTRA_RSSI);
+                System.out.println(deviceName + " " + deviceHardwareAddress);
+
+            }
+        }
+    }
+
+
+    Timer timer;
+    TimerTask timerTask;
+
+    public void startTimer() {
+
+        //set a new Timer
+        timer = new Timer();
+
+        //initialize the TimerTask's job
+        initializeTimerTask();
+
+        //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
+
+        timer.schedule(timerTask, 0, 5000); //
+
+    }
+
+    public void initializeTimerTask() {
+
+        timerTask = new TimerTask() {
+            public void run() {
+                l++;
+                StringBuilder sb = new StringBuilder();
+                for(int i=0; i< lst_Devices.size();i++) {
+                    sb = sb.append(lst_Devices.get(i)).append(" ");
+                }
+
+                saveFile(sb.toString(),X,Y);
+
+                lst_Devices.clear();
+                //use a handler to run a toast that shows the current timestamp
+                if (bluetoothAdapter.isDiscovering()) {
+                    bluetoothAdapter.cancelDiscovery();
+//                    progressBar.setVisibility(View.INVISIBLE);
+                } else {
+//                    progressBar.setVisibility(View.VISIBLE);
+                    bluetoothAdapter.startDiscovery();
+                }
+//                if (bluetoothAdapter.isDiscovering()) {
+//                    bluetoothAdapter.cancelDiscovery();
+//                }
+//                progressBar.setVisibility(View.VISIBLE);
+//                bluetoothAdapter.startDiscovery();
+            }
+        };
+    }
 
 }
