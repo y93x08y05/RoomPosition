@@ -1,9 +1,16 @@
 package com.example.t_tazhan.roomposition;
 
+//import android.app.Activity;
 import android.app.Activity;
 import android.os.Bundle;
+import com.skybeacon.sdk.RangingBeaconsListener;
+import com.skybeacon.sdk.ScanServiceStateCallback;
+import com.skybeacon.sdk.locate.SKYBeacon;
+import com.skybeacon.sdk.locate.SKYBeaconManager;
+import com.skybeacon.sdk.locate.SKYBeaconMultiIDs;
+import com.skybeacon.sdk.locate.SKYRegion;
 
-public class MainActivity1 extends Activity{
+public class MainActivity1 extends Activity {
 //    private static final SKYRegion ALL_SEEKCY_BEACONS_REGION = new SKYRegion("rid_all", null, null, null, null);
 //
 //    @Override
@@ -12,6 +19,7 @@ public class MainActivity1 extends Activity{
 //        setContentView(R.layout.activity_main);
 //
 //        SKYBeaconManager.getInstance().init(this);
+        //SKYBeaconManager testinstance = new SKYBeaconManager(this);
 //        SKYBeaconManager.getInstance().setCacheTimeMillisecond(3000);//可选，不设置默认为5秒缓存
 //        SKYBeaconManager.getInstance().setScanTimeIntervalMillisecond(2000);//可选，不设置默认为2秒返回一次数据
 ////        SKYBeaconManager.getInstance().setBroadcastKey("AB11221498756731BCD7D8E239E765AD52B7139DE87654DAB27394BCD7D792A");

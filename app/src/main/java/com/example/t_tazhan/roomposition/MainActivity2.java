@@ -48,6 +48,7 @@ public class MainActivity2 extends AppCompatActivity {
     Button btrssi1;
     Button btrssi2;
     Button Btrssi3;
+    Button buttonEnd;
     EditText textX;
     EditText textY;
     ProgressBar progressBar;
@@ -60,15 +61,13 @@ public class MainActivity2 extends AppCompatActivity {
     BluetoothGatt mBluetoothGatt2;
     RSSI rssiThread;
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb1 = new StringBuilder();
     String X = null,Y = null;
     int l = 0;
-    //广播接收器
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public  void onReceive(Context context, Intent intent) {
-            System.out.println("第" + (++l) + "次进入onReceive的时间是" + System.currentTimeMillis());
-            lst_Devices.clear();
+//            lst_Devices.clear();
             // TODO Auto-generated method stub
             String action = intent.getAction();
             // 显示所有收到的消息及其细节
@@ -78,42 +77,38 @@ public class MainActivity2 extends AppCompatActivity {
                 bluetooth_Device = intent
                         .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (bluetooth_Device.getBondState() == BluetoothDevice.BOND_NONE) {
-                    String str ="信标"
-//                            + bluetooth_Device.getName() + "|"
-                            + getBeacon(bluetooth_Device.getAddress()) + " "
-                            + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI);
+                    String str =
+                            bluetooth_Device.getName() + "|"
+                            + bluetooth_Device.getAddress() + " "
+                            + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI)
+                            + " "  + l + " ";
                     if (lst_Devices.indexOf(str) == -1) {// 防止地址被重复添加
                         lst_Devices.add(str); // 获取设备名称和mac地址
-                        System.out.println("第" + l + "次进入add String");
 //                        saveFile(str);
                     }
-                    adt_Devices.notifyDataSetChanged();
+//                    adt_Devices.notifyDataSetChanged();
                 } else if(bluetooth_Device.getBondState() == BluetoothDevice.BOND_BONDED) {
-                    String str ="信标"
-//                            + bluetooth_Device.getName() + "|"
-                            + getBeacon(bluetooth_Device.getAddress()) + " "
-                            + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI);
+                    String str =
+                            bluetooth_Device.getName() + "|"
+                            + bluetooth_Device.getAddress() + " "
+                            + intent.getExtras().getShort(bluetooth_Device.EXTRA_RSSI)
+                            + " "  + l + " ";
                     if (lst_Devices.indexOf(str) == -1) {// 防止地址被重复添加
                         lst_Devices.add(str); // 获取设备名称和mac地址
-                        System.out.println("第" + l + "次进入add String");
-//                        saveFile(str);
                     }
-                    adt_Devices.notifyDataSetChanged();
+//                    adt_Devices.notifyDataSetChanged();
                 }
-            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                sb.append("分界线");
             }
-
             //此行代码表示取消继续搜索蓝牙信号
 //            bluetoothAdapter.cancelDiscovery();
             progressBar.setVisibility(View.INVISIBLE);
 
-//            sb.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
-            for (int j=0;j<lst_Devices.size();j++) {
-                sb.append(lst_Devices.get(j)).append("\r");
-                System.out.println(j+ " "+lst_Devices.get(j));
-            }
-            saveFile(sb.toString(),X,Y);
+//            sb1.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
+//            for (int j=0;j<lst_Devices.size();j++) {
+//                sb1.append(lst_Devices.get(j)).append("\r");
+//                System.out.println(j+ " "+lst_Devices.get(j));
+//            }
+//            saveFile(sb1.toString(),X,Y);
         }
 
     };
@@ -139,6 +134,7 @@ public class MainActivity2 extends AppCompatActivity {
 
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         bt1 = (Button) findViewById(R.id.button);
+        buttonEnd = (Button) findViewById(R.id.buttonEnd);
         Btrssi3= (Button) findViewById(R.id.RssiThread);
         btrssi1=(Button)findViewById(R.id.RSSIbutton1);
         btrssi2=(Button)findViewById(R.id.RSSIbutton2);
@@ -233,32 +229,10 @@ public class MainActivity2 extends AppCompatActivity {
     }
 
     public void onClick_Search(View v) {
-        sb.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
         l = 0;
-//        new Thread() {
-//            public void run() {
-//                handler.post(runnable);
-//            }
-//        }.start();
 //        for (int i=0;i<500;i++) {
 //            System.out.println("搜索" + i);
 //            try {
-//                if (bluetoothAdapter.isDiscovering()) {
-//                    bluetoothAdapter.cancelDiscovery();
-//                    progressBar.setVisibility(View.INVISIBLE);
-//                    bluetoothAdapter.startDiscovery();
-//                    progressBar.setVisibility(View.VISIBLE);
-//                    Thread.sleep(500);
-//                    bluetoothAdapter.cancelDiscovery();
-//                    return;
-//                } else {
-//                    bluetoothAdapter.startDiscovery();
-//                    progressBar.setVisibility(View.VISIBLE);
-//                    Thread.sleep(500);
-//                    bluetoothAdapter.cancelDiscovery();
-//                    progressBar.setVisibility(View.INVISIBLE);
-//                    return;
-//                }
 //                if (bluetoothAdapter.isDiscovering()) {
 //                    bluetoothAdapter.cancelDiscovery();
 //                    progressBar.setVisibility(View.INVISIBLE);
@@ -267,12 +241,20 @@ public class MainActivity2 extends AppCompatActivity {
 //                    bluetoothAdapter.startDiscovery();
 //                }
 //                Thread.sleep(500);
-//                CaptureRssi( );
 //            } catch (InterruptedException e) {
 //                e.printStackTrace();
 //            }
 //        }
         startTimer();
+    }
+
+    public void onClick_End(View view) {
+        sb1.append("此时信标位置为" + "[" + X + " "+ Y + "]").append("\r");
+        if (bluetoothAdapter.isDiscovering()) {
+            bluetoothAdapter.cancelDiscovery();
+        }
+        timer.cancel();
+        saveFile(sb1.append(sb2).toString(),X,Y);
     }
 
     class ItemClickEvent implements AdapterView.OnItemClickListener {
@@ -358,62 +340,17 @@ public class MainActivity2 extends AppCompatActivity {
         }
     };
 
-    private Runnable runnable = new Runnable() {
-        @Override
-        public void run() {
-            final int scanRepeatValue = 500;
-            final int scanTimeValue = 5;
-
-            for (int i = 0; i < scanRepeatValue; i++) {
-                System.out.println("搜索" + i);
-                progressBar.setVisibility(View.VISIBLE);
-                bluetoothAdapter.startDiscovery();
-                for (int j = 0; j < scanTimeValue; j++) {
-                    try {
-                        sleep(100L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                bluetoothAdapter.cancelDiscovery();
-                progressBar.setVisibility(View.INVISIBLE);
-//                CaptureRssi();
-                break;
-            }
-        }
-    };
-
-
-    public  void CaptureRssi( ) {
-     Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-
-        if(pairedDevices.size() > 0) {
-        // There are paired devices. Get the name and address of each paired device.
-            for(BluetoothDevice device : pairedDevices) {
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress();// MAC address
-//                short RSSI = intent.getExtras().getShort(device.EXTRA_RSSI);
-                System.out.println(deviceName + " " + deviceHardwareAddress);
-
-            }
-        }
-    }
-
-
     Timer timer;
     TimerTask timerTask;
+    StringBuilder sb2 = new StringBuilder();
 
     public void startTimer() {
 
-        //set a new Timer
         timer = new Timer();
 
-        //initialize the TimerTask's job
         initializeTimerTask();
 
-        //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
-
-        timer.schedule(timerTask, 0, 5000); //
+        timer.schedule(timerTask, 0, 10000); //
 
     }
 
@@ -422,12 +359,13 @@ public class MainActivity2 extends AppCompatActivity {
         timerTask = new TimerTask() {
             public void run() {
                 l++;
-                StringBuilder sb = new StringBuilder();
+//                StringBuilder sb2 = new StringBuilder();
                 for(int i=0; i< lst_Devices.size();i++) {
-                    sb = sb.append(lst_Devices.get(i)).append(" ");
+                    sb2 = sb2.append(lst_Devices.get(i));
                 }
-
-                saveFile(sb.toString(),X,Y);
+                sb2.append("\r");
+                System.out.println(sb2.toString());
+//                saveFile(sb2.toString(),X,Y);
 
                 lst_Devices.clear();
                 //use a handler to run a toast that shows the current timestamp

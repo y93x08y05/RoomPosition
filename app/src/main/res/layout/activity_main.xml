@@ -116,6 +116,15 @@
         android:textColor="#ff1919c0" />
         </LinearLayout>
 
+        <Button
+            android:id="@+id/buttonEnd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:onClick="onClick_End"
+            android:text="单击按钮以结束搜索"
+            android:textColor="#ff1919c0" />
+
         <ProgressBar
             android:id="@+id/progressBar"
             style="@android:style/Widget.ProgressBar.Large.Inverse"
